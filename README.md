@@ -11,9 +11,9 @@ This repository contains the work, assignments, lab exercises, and project deliv
 | Name | SRN |
 |------|-----|
 | Mallikarjun Rao R.V | PES1UG24AM155 |
-| Member 2 | PES1UG24XXXXX |
-| Member 3 | PES1UG24XXXXX |
-| Member 4 | PES1UG24XXXXX |
+| Kshitij Satish Shetty | PES1UG24AM143 |
+| Mounik Manohar | PES1UG24AM168 |
+| Moksha S | PES1UG24Am167 |
 
 ---
 
