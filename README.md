@@ -1,16 +1,21 @@
-# Mallikarjun Rao R.V
+# SE Lab Team 03
 
-**SRN:** `PES1UG24AM155`
+Software Engineering Laboratory, PES University
+
+This repository contains the work, assignments, lab exercises, and project deliverables for **SE Lab Team 03**.
 
 ---
 
-# SE Lab Team 03
+## Team Members
 
-Software Engineering Laboratory — Team 03
+| Name | SRN |
+|------|-----|
+| Mallikarjun Rao R.V | PES1UG24AM155 |
+| Member 2 | PES1UG24XXXXX |
+| Member 3 | PES1UG24XXXXX |
+| Member 4 | PES1UG24XXXXX |
 
-## Team Repository
-
-This repository contains the work, assignments, lab exercises, and project deliverables for **SE Lab Team 03**.
+---
 
 ## Contents
 
@@ -19,6 +24,18 @@ This repository contains the work, assignments, lab exercises, and project deliv
 * Project Documentation
 * Other required deliverables
 
+---
+
+## Working Together
+
+1. Clone the repository:
+   `git clone https://github.com/mallikarjunrao-sketch/Software_Engineering_Lab_Team_03.git`
+2. Pull the latest changes before you start: `git pull`
+3. Commit with a clear message: `git commit -m "Describe your change"`
+4. Push your work: `git push`
+
+---
+
 ## Repository
 
-**GitHub:** `mallikarjunrao-sketch/SE_LAB_TEAM_03`
+**GitHub:** [mallikarjunrao-sketch/Software_Engineering_Lab_Team_03](https://github.com/mallikarjunrao-sketch/Software_Engineering_Lab_Team_03)
