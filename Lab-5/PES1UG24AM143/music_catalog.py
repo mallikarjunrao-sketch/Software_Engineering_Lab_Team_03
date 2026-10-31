@@ -3,7 +3,10 @@ import secrets
 import sqlite3
 
 conn = sqlite3.connect(":memory:")
-conn.execute("CREATE TABLE songs (id INTEGER PRIMARY KEY, title TEXT, artist TEXT, plays INTEGER)")
+conn.execute(
+    "CREATE TABLE songs "
+    "(id INTEGER PRIMARY KEY, title TEXT, artist TEXT, plays INTEGER)"
+)
 
 
 def addSong(title, artist, plays=0, playlist=[]):
@@ -21,7 +24,9 @@ def shufflePick():
 
 
 def popularity(title):
-    row = conn.execute("SELECT plays FROM songs WHERE title = ?", (title,)).fetchone()
+    row = conn.execute(
+        "SELECT plays FROM songs WHERE title = ?", (title,)
+    ).fetchone()
     if row is None:
         return "unknown"
     else:
@@ -38,8 +43,8 @@ def loadPlaylist(blob):
 
 def totalPlays():
     try:
-        return conn.execute("SELECT SUM(plays) FROM songs").fetchone()[0]
-    except:
+        return conn.execute("SELECT SUM(plays) FROM songs").fetchone()[0] or 0
+    except sqlite3.Error:
         return 0
 
 
@@ -47,9 +52,15 @@ def main():
     pl = addSong("Aurora", "Nila", 250)
     addSong("Monsoon", "Kavya", 40, pl)
     blob = savePlaylist(pl)
-    l = loadPlaylist(blob)
-    if len(l) > 1: print("multi-song playlist")
-    print(popularity("Aurora"), popularity("Monsoon"), shufflePick(), totalPlays())
+    songs = loadPlaylist(blob)
+    if len(songs) > 1:
+        print("multi-song playlist")
+    print(
+        popularity("Aurora"),
+        popularity("Monsoon"),
+        shufflePick(),
+        totalPlays(),
+    )
 
 
 main()
