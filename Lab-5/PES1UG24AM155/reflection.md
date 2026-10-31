@@ -1,7 +1,6 @@
 # Lab 5 Reflection
 
-> The handout PDF does not list the four reflection questions. These are the usual ones for this lab. Replace the headings with the exact wording from your handout if it differs.
-
+> The handout PDF does not list the four reflection questions. These are my expected questions about this lab.
 ## 1. Which issues were the easiest and the hardest to fix?
 
 The easiest were the style issues from Flake8 (blank lines, spacing, line length) and the Pylint naming warnings, because the tool tells you exactly what to change. The hardest was the `os.system` command injection. Deleting the line would have broken the function, so I had to redesign it: validate the IP address with `ipaddress` and make the request with `http.client`, which never touches a shell. The mutable default argument was also tricky, because it works fine in a short demo and only fails when the function is called many times.
