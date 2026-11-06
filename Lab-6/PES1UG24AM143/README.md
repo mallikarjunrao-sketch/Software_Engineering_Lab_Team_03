@@ -1,231 +1,196 @@
-# Real-Time Credit Card Fraud Detection Pipeline
 
-A reproducible streaming pipeline for scoring credit-card transactions using **Apache Kafka**, **Apache Flink**, and **Apache Iceberg**. The project uses the public ULB Credit Card Fraud Detection dataset and includes model evaluation, smoke-test tooling, load-test scripts, and a presentation dashboard.
+# Lab 6 – Code and Branch Coverage Analysis
 
-## Team Details
-
-**Course:** CSE (AIML)  
-**Semester:** 5  
+**Student:** Kshitij Satish Shetty  
+**SRN:** PES1UG24AM143  
 **Section:** C  
+**Project:** Parking Fee  
+**Lab:** Lab 6 – Code and Branch Coverage
 
-| S. No. | Team Member Name | SRN |
-|---:|---|---|
-| 1 | Kshitij Satish Shetty | PES1UG24AM143 |
-| 2 | Kushal G | PES1UG24AM145 |
+## 1. Overview
 
-## 1. Architecture
+This lab focuses on measuring and improving code coverage and branch coverage using Python's `coverage` library and `pytest`.
 
-```mermaid
-flowchart LR
-    A["ULB Credit Card Dataset / Event Producer"] --> B["Apache Kafka"]
-    B --> C["Apache Flink"]
-    C --> D["Fraud Model Scoring"]
-    D --> E[("Apache Iceberg: scored_transactions")]
-    C --> F[("Apache Iceberg: malformed_events")]
-    G["PostgreSQL"] --- H["Iceberg REST Catalog"]
-    H --- E
-    H --- F
-    I["MinIO (S3-compatible storage)"] --- E
-    I --- F
-    J["Evaluation / Load-Test Scripts"] --> B
-    K["Presentation Dashboard"] --> L["Evaluation Results"]
-```
+The project tests a parking fee application that handles:
+- Fee calculation by vehicle type and parking duration
+- Free grace period and hourly rounding
+- Electric vehicle discount
+- Lost ticket penalty
+- Parking slot assignment
+- Monthly pass pricing
 
-### Main components
+The objective is to achieve at least 90% code coverage and branch coverage by writing comprehensive test cases.
 
-| Component | Role |
+## 2. Application Details
+
+The application is implemented in `parking_fee.py`.
+
+It consists of three main functions:
+
+| Function | Description |
 |---|---|
-| Event producer | Replays held-out transactions and can pace events at a configured rate |
-| Apache Kafka | Buffers transaction events for streaming consumption |
-| Apache Flink | Consumes, validates, scores, and routes malformed events separately |
-| Fraud model | Logistic-regression scoring using the exported model artifact |
-| Apache Iceberg | Persists scored transactions and malformed events |
-| Iceberg REST catalog + PostgreSQL | Catalog and metadata services |
-| MinIO | Local S3-compatible storage for Iceberg data |
-| Evaluation scripts / notebook | Model metrics and performance evidence |
-| Presentation UI | Displays evaluation results for demonstration |
+| `parking_fee()` | Validates the vehicle and duration, calculates the fee, applies the EV discount and adds the lost ticket penalty. |
+| `find_slot()` | Returns the slot type based on free slots, disability status and vehicle type. |
+| `monthly_pass()` | Returns the monthly pass price for a bike or car, with a resident discount. |
 
-## 2. Requirements
+### Hourly Rates
 
-- Windows 10/11 with Docker Desktop and WSL2 enabled, or Linux/macOS with Docker Engine and Docker Compose v2.
-- Python 3.11 or newer (the project was tested with Python 3.12).
-- Allow Docker sufficient memory; requirements depend on the host and Compose configuration.
+| Vehicle | Rate per hour |
+|---|---:|
+| Bike | 10 |
+| Car | 30 |
+| Truck | 60 |
 
-Verify installations:
+### Business Rules
 
-```cmd
-docker --version
-docker compose version
-python --version
+- Stays of 30 minutes or less are free.
+- Longer stays are charged per hour, and a partial hour is rounded up.
+- EV bikes and cars get a 50% discount (trucks do not).
+- A lost ticket adds a flat penalty of 200.
+- Monthly pass: bike 500, car 1500, with a 20% resident discount. Trucks have no pass.
+
+## 3. Project Structure
+
+```text
+PES1UG24AM143/
+│
+├── parking_fee.py
+├── test_parking_fee.py
+├── CodeCoverageTest_parking_fee_application.py
+├── BranchCoverageTest_parking_fee_application.py
+├── README.md
+│
+└── screenshots/
+    ├── code_coverage.png
+    └── branch_coverage.png
 ```
 
-## 3. Setup
+## 4. Test Cases
 
-Run commands from the repository root (the folder containing `docker-compose.yml`).
+### 4.1 Code Coverage Tests
 
-### Create a Python environment
+File: `CodeCoverageTest_parking_fee_application.py`
 
-Windows CMD:
+The test cases cover:
 
-```cmd
-python -m venv .venv
-.venv\Scripts\activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+- Free short stay
+- Unknown vehicle
+- Negative duration
+- Exact hours (no rounding)
+- Partial hour rounded up
+- EV discount
+- Lost ticket penalty
+- Slot assignment: any floor, full, disabled, truck basement
+- Monthly pass for bike, resident car and invalid vehicle
+
+### 4.2 Branch Coverage Tests
+
+File: `BranchCoverageTest_parking_fee_application.py`
+
+The test cases exercise both True and False outcomes of every decision branch, including:
+
+- Vehicle validation (known and unknown)
+- Duration validation (negative and valid)
+- Free-stay boundary at 30 and 31 minutes, and zero minutes
+- Rounding condition (exact hour and partial hour)
+- EV discount for car, bike and truck, and non-EV
+- Lost ticket with paid and free stays, and combined with EV
+- Slot conditions: zero and negative free slots, one slot left, disabled, truck, bike
+- Monthly pass for bike and car, resident and non-resident, and invalid vehicles
+
+**Note:** The original `parking_fee.py` application is retained unchanged. Coverage is improved through additional test cases.
+
+## 5. Requirements
+
+- Python 3.x
+- pytest
+- coverage
+
+Install the required dependencies:
+
+```bash
+pip install pytest coverage
 ```
 
-If `.venv` already exists, activate it instead of creating another one.
+## 6. Code Coverage Analysis
 
-### Dataset and model files
+Run the following commands:
 
-Place the ULB dataset at `data/raw/creditcard.csv` if reproducing dataset preparation or training. Large raw and processed CSV files are intentionally excluded from version control by `.gitignore`. Follow the repository's data instructions and scripts for the expected preprocessing workflow.
+```bash
+coverage erase
 
-The streaming scorer uses the exported model artifact under `models/`. Do not commit credentials, local `.env` files, or large raw datasets.
+coverage run -m pytest CodeCoverageTest_parking_fee_application.py
 
-## 4. Start the streaming stack
-
-Build and start Docker Compose:
-
-```cmd
-docker compose up -d --build
-docker compose ps
+coverage report -m
 ```
 
-Wait for core services to become healthy. Inspect logs if needed:
+### Result
 
-```cmd
-docker compose logs --tail=100 kafka
-docker compose logs --tail=100 jobmanager
-docker compose logs --tail=100 taskmanager
-docker compose logs --tail=100 iceberg-rest
+- Test cases executed: 14
+- Test cases passed: 14
+- Statement coverage: 100%
+
+### Code Coverage Screenshot
+
+![Code Coverage Report](screenshots/code_coverage.png)
+
+## 7. Branch Coverage Analysis
+
+Run the following commands:
+
+```bash
+coverage erase
+
+coverage run --branch -m pytest BranchCoverageTest_parking_fee_application.py
+
+coverage report -m
 ```
 
-### Submit the Flink job
+### Result
 
-Check whether the job is already running:
+- Test cases executed: 30
+- Test cases passed: 30
+- Branches: 24
+- Partial branches: 0
+- Branch coverage: 100%
 
-```cmd
-docker exec fraud-flink-jobmanager /opt/flink/bin/flink list
-```
+### Branch Coverage Screenshot
 
-If the fraud-scoring job is listed as `RUNNING`, **do not submit a duplicate**. If no job is running, submit it once:
+![Branch Coverage Report](screenshots/branch_coverage.png)
 
-```cmd
-docker exec -d -e FLINK_PARALLELISM=1 fraud-flink-jobmanager /opt/flink/bin/flink run -py /opt/app/src/flink_job.py --bootstrap-servers kafka:9092 --iceberg-rest-uri http://iceberg-rest:8181 --s3-endpoint http://minio:9000
-```
+## 8. Coverage Summary
 
-Check the job list again and inspect logs if it does not start successfully.
+| Coverage Type | Achieved Coverage | Required Coverage |
+|---|---:|---:|
+| Code Coverage | 100% | 90% |
+| Branch Coverage | 100% | 90% |
 
-## 5. Run verification and evaluation
+Both coverage requirements have been achieved based on the recorded test executions.
 
-Activate the Python virtual environment first if you are using one.
+## 9. Deliverables
 
-### Automated tests
+The following deliverables are included:
 
-```cmd
-python -m pytest -q
-```
+1. `CodeCoverageTest_parking_fee_application.py` – Code coverage test cases.
+2. `BranchCoverageTest_parking_fee_application.py` – Branch coverage test cases.
+3. `screenshots/code_coverage.png` – Code coverage terminal output.
+4. `screenshots/branch_coverage.png` – Branch coverage terminal output.
+5. `parking_fee.py` – Original application.
+6. `test_parking_fee.py` – Starter test file.
+7. `README.md` – Project documentation and coverage analysis.
 
-### Smoke test
+## 10. GitHub Commits
 
-```cmd
-python scripts\smoke_test.py
-```
+The Lab 6 submission was pushed to the team repository using separate commits:
 
-Read the output carefully and distinguish a local smoke test from a live Docker-cluster test.
+1. `Lab 6: code coverage tests and report (PES1UG24AM143)`
+2. `Lab 6: branch coverage tests and report (PES1UG24AM143)`
+3. `Lab 6: organise folder, add screenshots folder and README (PES1UG24AM143)`
 
-### Model evaluation
+Repository:
 
-```cmd
-python scripts\run_evaluation.py
-```
+[Software Engineering Lab Team 03](https://github.com/mallikarjunrao-sketch/Software_Engineering_Lab_Team_03)
 
-The held-out evaluation reports precision, recall, F1-score, false-positive rate, PR-AUC, and ROC-AUC. Previously recorded results at threshold 0.50 were:
+---
 
-- Held-out transactions: 56,962
-- Precision: 6.10%
-- Recall: 91.84%
-- F1-score: 0.1144
-- False-positive rate: 2.44%
-- PR-AUC: 0.7190
-- ROC-AUC: 0.9721
-
-Fraud is rare, so high recall comes with false positives. Discuss precision-recall and threshold trade-offs; do not present these metrics as proof of production readiness.
-
-### Load tests
-
-Run load tests only when the Docker services and Flink job are ready:
-
-```cmd
-python scripts\run_load_tests.py
-```
-
-Check supported options with the script's help output before using custom rates or event counts. Report only measurements actually produced by the run. Distinguish offered event rate, achieved producer rate, end-to-end throughput, latency, and records confirmed persisted in Iceberg.
-
-## 6. Presentation dashboard
-
-Start the presentation UI in a separate terminal:
-
-```cmd
-python scripts\presentation_ui.py
-```
-
-Open `http://localhost:8501`.
-
-This UI presents evaluation results. Demonstrate the live Kafka/Flink/Iceberg pipeline separately using `docker compose ps`, the Flink job list or Web UI, service logs, and persisted table results. The evaluation dashboard alone does not prove live streaming.
-
-## 7. Results notebook and report
-
-- Results notebook: `notebooks/results.ipynb`
-- Technical report: `report/technical_report.pdf`
-- Editable report source: `report/technical_report.md`
-- Model card: `MODEL_CARD.md`
-
-Review notebook outputs before submission. Ensure the report's description of Docker availability and load-test results matches the measurements actually verified on the final machine.
-
-## 8. Useful URLs
-
-When the stack is running, these interfaces may be available according to the port mappings in `docker-compose.yml`:
-
-- Presentation UI: `http://localhost:8501`
-- Flink Web UI: `http://localhost:8081`
-- MinIO console: check the port mapping in `docker-compose.yml`
-
-If an interface does not open, check `docker compose ps` and the relevant service logs.
-
-## 9. Stop and restart safely
-
-Stop running services while preserving containers and persistent volumes:
-
-```cmd
-docker compose stop
-```
-
-Restart them later:
-
-```cmd
-docker compose up -d
-docker compose ps
-docker exec fraud-flink-jobmanager /opt/flink/bin/flink list
-```
-
-Start the dashboard again in a separate terminal with `python scripts\presentation_ui.py`.
-
-**Important:** Do not use `docker compose down -v` for a normal shutdown. The `-v` option removes Compose-managed volumes and may delete persistent catalog or data state. Use it only when you intentionally want to delete that data and have verified backups.
-
-## 10. Repository hygiene
-
-Before packaging the project:
-
-- Exclude `.venv/`, Python caches, `.env`, local runtime volumes, and large raw/processed datasets.
-- Keep source code, Docker configuration, tests, model artifact, notebook, technical report, and model card.
-- Include small results files that support your claims, where appropriate.
-- Do not include passwords, API keys, or other secrets.
-- Re-run tests and inspect the ZIP contents before submission.
-
-## 11. Limitations
-
-- The ULB dataset does not provide genuine customer identities or merchant categories; transaction-amount bands are proxies, not demographic segments.
-- The model scores transactions independently and does not use customer-level velocity windows.
-- A local smoke test and a live containerized load test are different forms of evidence. State clearly which one produced each reported result.
-- This is an academic prototype, not a production payment authorization system; further validation, monitoring, security controls, and operational testing would be needed.
+**Lab 6 Submission – PES1UG24AM143**
